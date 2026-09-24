@@ -45,11 +45,11 @@ pipeline {
         }
 
         stage('Deploy with Docker Compose') {
-            steps {
-                sh '''
-                    cd ~/dockerize-react-node-postgres-nginx-application
-                    docker compose pull
-                    docker compose up -d
+    steps {
+        sh '''
+            docker compose pull
+            docker compose up -d
+      
                 '''
             }
         }
