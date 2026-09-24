@@ -11,7 +11,7 @@ const PostUser = () => {
 
     const createUser = async () => {
       await axios
-      .post("http://localhost:8000/api/form", 
+      .post("api/form", 
       user,
       {
         headers: {
