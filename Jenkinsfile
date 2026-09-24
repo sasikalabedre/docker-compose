@@ -4,34 +4,32 @@ pipeline {
     environment {
         FRONTEND_IMAGE = 'sasikalabedre/docker-compose-frontend:latest'
         BACKEND_IMAGE  = 'sasikalabedre/docker-compose-backend:latest'
+        DOCKER_NETWORK = 'dockerize-react-node-postgres-nginx-application_node-network'
     }
 
     stages {
 
-        // 1. Get latest code from GitHub
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        // 2. Build Frontend and Backend Docker images
         stage('Build Docker Images') {
             steps {
                 sh '''
-                    echo "Building Frontend image..."
+                    echo "===== Building Frontend Image ====="
                     docker build -t $FRONTEND_IMAGE ./react
 
-                    echo "Building Backend image..."
+                    echo "===== Building Backend Image ====="
                     docker build -t $BACKEND_IMAGE ./node
 
-                    echo "Docker images built successfully."
+                    echo "===== Docker Images ====="
                     docker images
                 '''
             }
         }
 
-        // 3. Login to Docker Hub
         stage('Login to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
@@ -48,77 +46,93 @@ pipeline {
             }
         }
 
-        // 4. Push images to Docker Hub
         stage('Push Images to Docker Hub') {
             steps {
                 sh '''
-                    echo "Pushing Frontend image..."
+                    echo "===== Pushing Frontend Image ====="
                     docker push $FRONTEND_IMAGE
 
-                    echo "Pushing Backend image..."
+                    echo "===== Pushing Backend Image ====="
                     docker push $BACKEND_IMAGE
                 '''
             }
         }
 
-        // 5. Remove only old Frontend and Backend containers
         stage('Remove Old Frontend and Backend') {
             steps {
                 sh '''
-                    echo "Removing old Frontend container..."
+                    echo "===== Removing old frontend ====="
                     docker rm -f frontend || true
 
-                    echo "Removing old Backend container..."
+                    echo "===== Removing old backend ====="
                     docker rm -f backend || true
 
-                    echo "Old Frontend and Backend containers removed."
+                    echo "Database container is NOT touched."
                 '''
             }
         }
 
-        // 6. Pull latest images from Docker Hub
         stage('Pull Latest Images') {
             steps {
                 sh '''
-                    echo "Pulling latest Frontend image..."
+                    echo "===== Pulling latest frontend ====="
                     docker pull $FRONTEND_IMAGE
 
-                    echo "Pulling latest Backend image..."
+                    echo "===== Pulling latest backend ====="
                     docker pull $BACKEND_IMAGE
                 '''
             }
         }
 
-        // 7. Start only Frontend and Backend
-        stage('Deploy Frontend and Backend') {
+        stage('Deploy Frontend') {
             steps {
                 sh '''
-                    cd /home/sasikala_bedre_gmail_com/dockerize-react-node-postgres-nginx-application
+                    echo "===== Starting Frontend ====="
 
-                    echo "Starting Frontend and Backend..."
-
-                    docker compose up -d frontend backend
-
-                    echo "Deployment completed."
+                    docker run -d \
+                        --name frontend \
+                        --network $DOCKER_NETWORK \
+                        -p 5173:5173 \
+                        -w /usr/src/app \
+                        $FRONTEND_IMAGE \
+                        npm run dev
                 '''
             }
         }
 
-        // 8. Verify containers
+        stage('Deploy Backend') {
+            steps {
+                sh '''
+                    echo "===== Starting Backend ====="
+
+                    docker run -d \
+                        --name backend \
+                        --network $DOCKER_NETWORK \
+                        -p 3000:3000 \
+                        -w /usr/src/app \
+                        $BACKEND_IMAGE \
+                        npm run start
+                '''
+            }
+        }
+
         stage('Verify Deployment') {
             steps {
                 sh '''
-                    echo "Checking running containers..."
+                    echo "===== All Running Containers ====="
                     docker ps
 
-                    echo "Checking Frontend..."
+                    echo "===== Frontend ====="
                     docker ps --filter "name=frontend"
 
-                    echo "Checking Backend..."
+                    echo "===== Backend ====="
                     docker ps --filter "name=backend"
 
-                    echo "Checking Database..."
+                    echo "===== Database ====="
                     docker ps --filter "name=db"
+
+                    echo "===== Nginx ====="
+                    docker ps --filter "name=nginx"
                 '''
             }
         }
