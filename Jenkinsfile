@@ -47,12 +47,12 @@ pipeline {
         stage('Deploy with Docker Compose') {
     steps {
         sh '''
+            cd /home/sasikala_bedre_gmail_com/dockerize-react-node-postgres-nginx-application
             docker compose pull
             docker compose up -d
-      
-                '''
-            }
-        }
+        '''
+    }
+}
     }
 
     post {
