@@ -4,8 +4,7 @@ version: '3'
 services:
 
   backend:
-    build:
-      context: node
+    image: sasikalabedre/docker-compose-backend:latest
     container_name: backend
     working_dir: /usr/src/app
     networks:
@@ -22,8 +21,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build:
-      context: react
+    image: sasikalabedre/docker-compose-frontend:latest
     container_name: frontend
     working_dir: /usr/src/app
     networks:
